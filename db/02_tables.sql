@@ -6,3 +6,10 @@ CREATE TABLE book
     author  VARCHAR(32) NOT NULL,
     pages   INTEGER NOT NULL
 );
+
+DROP TABLE IF EXISTS users CASCADE;
+CREATE TABLE users
+(
+    username VARCHAR(32) PRIMARY KEY NOT NULL,
+    password VARCHAR(128) NOT NULL
+)
