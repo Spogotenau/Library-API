@@ -2,63 +2,50 @@ package com.developper.library.auth;
 
 import com.developper.library.auth.requests.SigninRequest;
 import com.developper.library.auth.requests.SignupRequest;
-import com.developper.library.errorhandling.InternalServerErrorException;
 import com.developper.library.responses.MessageResponse;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.security.Key;
-import java.util.Date;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Key jwtSecret;
-    private static final long JWT_EXPIRATION = 86400000;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository) {
+    public AuthService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       AuthenticationManager authenticationManager,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
-        this.jwtSecret = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
-    public MessageResponse signup(SignupRequest signupRequest) {
-        if (userRepository.findByUsername(signupRequest.getUsername()) != null) {
-            throw new InternalServerErrorException("Username is already in use");
-        }
+    public String signin(SigninRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        String hashedPassword = passwordEncoder.encode(signupRequest.getPassword());
-        User newUser = new User(signupRequest.getUsername(), hashedPassword);
-        userRepository.save(newUser);
-
-        return new MessageResponse("Successfully created user");
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return jwtService.generateJwtToken(authentication);
     }
 
-    public String signin(SigninRequest signinRequest) {
-        User user = userRepository.findByUsername(signinRequest.getUsername());
-        if (user == null) {
-            throw new InternalServerErrorException("User not found");
+    public MessageResponse signup(SignupRequest request) {
+        if (userRepository.findByUsername(request.getUsername()) != null) {
+            throw new RuntimeException("Username already taken");
         }
 
-        if (!passwordEncoder.matches(signinRequest.getPassword(), user.getPassword())) {
-            throw new InternalServerErrorException("Invalid password");
-        }
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return generateJwtToken(user);
-    }
-
-    private String generateJwtToken(User user) {
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + JWT_EXPIRATION))
-                .signWith(jwtSecret)
-                .compact();
+        userRepository.save(user);
+        return new MessageResponse("User registered successfully!");
     }
 }
