@@ -27,10 +27,8 @@ public class BookService {
                 .orElseThrow(() -> new InternalServerErrorException("Failed to load book"));
     }
 
-    public IdResponse create(Book book) {
-        bookRepository.save(book);
-
-        return new IdResponse(book.getId(), "Book was successfully created");
+    public Book create(Book book) {
+        return bookRepository.save(book);
     }
 
     public IdResponse update(Book bookUpdate) {

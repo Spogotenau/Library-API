@@ -34,10 +34,11 @@ public class BookController {
 
     @PostMapping
     public ResponseEntity<IdResponse> create(@RequestBody BookCreate bookCreate) {
-        UUID id = UUID.randomUUID();
-        Book book = new Book(id, bookCreate.getTitle(), bookCreate.getAuthor(), bookCreate.getPages());
+        Book book = new Book(null, bookCreate.getTitle(), bookCreate.getAuthor(), bookCreate.getPages());
 
-        return ResponseEntity.ok(bookService.create(book));
+        Book createdBook = bookService.create(book);
+
+        return ResponseEntity.ok(new IdResponse(createdBook.getId(), "Book was successfully created"));
     }
 
     @PutMapping("/{id}")

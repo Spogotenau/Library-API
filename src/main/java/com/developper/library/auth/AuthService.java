@@ -10,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import static com.developper.library.auth.Role.ROLE_USER;
+
 @Service
 public class AuthService {
 
@@ -44,6 +46,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(ROLE_USER);
 
         userRepository.save(user);
         return new MessageResponse("User registered successfully!");

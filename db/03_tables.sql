@@ -11,5 +11,6 @@ DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users
 (
     username VARCHAR(32) PRIMARY KEY NOT NULL,
-    password VARCHAR(128) NOT NULL
+    password VARCHAR(128) NOT NULL,
+    role role_type NOT NULL
 )
