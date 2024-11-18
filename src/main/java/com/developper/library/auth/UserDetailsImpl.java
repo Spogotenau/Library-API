@@ -1,5 +1,6 @@
 package com.developper.library.auth;
 
+import com.developper.library.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

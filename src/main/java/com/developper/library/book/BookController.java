@@ -34,7 +34,7 @@ public class BookController {
 
     @PostMapping
     public ResponseEntity<IdResponse> create(@RequestBody BookCreate bookCreate) {
-        Book book = new Book(null, bookCreate.getTitle(), bookCreate.getAuthor(), bookCreate.getPages());
+        Book book = new Book(null, bookCreate.getTitle(), bookCreate.getAuthor(), bookCreate.getPages(), null);
 
         Book createdBook = bookService.create(book);
 
@@ -43,9 +43,15 @@ public class BookController {
 
     @PutMapping("/{id}")
     public ResponseEntity<IdResponse> update(@RequestBody Book bookUpdate, @PathVariable UUID id) {
-        Book book = new Book(id, bookUpdate.getTitle(), bookUpdate.getAuthor(), bookUpdate.getPages());
+        Book existingBook = bookService.getBookById(id);
 
-        return ResponseEntity.ok(bookService.update(book));
+        existingBook.setTitle(bookUpdate.getTitle());
+        existingBook.setAuthor(bookUpdate.getAuthor());
+        existingBook.setPages(bookUpdate.getPages());
+
+        IdResponse response = bookService.update(existingBook);
+
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")

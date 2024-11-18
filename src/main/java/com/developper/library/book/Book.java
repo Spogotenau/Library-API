@@ -1,5 +1,7 @@
 package com.developper.library.book;
 
+import com.developper.library.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -28,4 +31,8 @@ public class Book {
 
     @Column(nullable = false)
     private int pages;
+
+    @ManyToMany(mappedBy = "booksRead")
+    @JsonIgnore
+    private List<User> readers;
 }

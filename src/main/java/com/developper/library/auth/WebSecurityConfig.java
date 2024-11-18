@@ -32,6 +32,7 @@ public class WebSecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/user/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/book/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/book/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

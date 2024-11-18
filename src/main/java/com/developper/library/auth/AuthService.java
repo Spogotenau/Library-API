@@ -3,6 +3,8 @@ package com.developper.library.auth;
 import com.developper.library.auth.requests.SigninRequest;
 import com.developper.library.auth.requests.SignupRequest;
 import com.developper.library.responses.MessageResponse;
+import com.developper.library.user.User;
+import com.developper.library.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,7 +41,7 @@ public class AuthService {
     }
 
     public MessageResponse signup(SignupRequest request) {
-        if (userRepository.findByUsername(request.getUsername()) != null) {
+        if (userRepository.findById(request.getUsername()).isPresent()) {
             throw new RuntimeException("Username already taken");
         }
 
