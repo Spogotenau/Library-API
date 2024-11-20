@@ -2,8 +2,12 @@ package com.developper.library.user;
 
 import com.developper.library.book.Book;
 import com.developper.library.book.BookRepository;
+import com.developper.library.errorhandling.ConflictException;
+import com.developper.library.errorhandling.InternalServerErrorException;
+import com.developper.library.errorhandling.NotFoundException;
 import com.developper.library.responses.MessageResponse;
 import com.developper.library.user.responses.UserGet;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,53 +25,76 @@ public class UserService {
     }
 
     public List<UserGet> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(user -> new UserGet(
-                        user.getUsername(),
-                        user.getBooksRead().stream()
-                                .map(book -> new UserGet.BookGetTitleAndId(book.getTitle(), book.getId()))
-                                .collect(Collectors.toList())
-                ))
-                .collect(Collectors.toList());
+        try {
+            return userRepository.findAll().stream()
+                    .map(user -> new UserGet(
+                            user.getUsername(),
+                            user.getBooksRead().stream()
+                                    .map(book -> new UserGet.BookGetTitleAndId(book.getTitle(), book.getId()))
+                                    .collect(Collectors.toList())
+                    ))
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Failed to get users");
+        }
     }
 
     public UserGet getUserByUsername(String username) {
-        User user = userRepository.findById(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            User user = userRepository.findById(username)
+                    .orElseThrow(() -> new NotFoundException("User named " + username));
 
-        return new UserGet(
-                user.getUsername(),
-                user.getBooksRead().stream()
-                        .map(book -> new UserGet.BookGetTitleAndId(book.getTitle(), book.getId()))
-                        .collect(Collectors.toList())
-        );
+            return new UserGet(
+                    user.getUsername(),
+                    user.getBooksRead().stream()
+                            .map(book -> new UserGet.BookGetTitleAndId(book.getTitle(), book.getId()))
+                            .collect(Collectors.toList())
+            );
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Failed to get user " + username);
+        }
+
     }
 
     public MessageResponse addBookToUser(String username, UUID bookId) {
-        User user = userRepository.findById(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+        try {
+            User user = userRepository.findById(username)
+                    .orElseThrow(() -> new NotFoundException("User named " + username));
+            Book book = bookRepository.findById(bookId)
+                    .orElseThrow(() -> new NotFoundException("Book with ID: " + bookId));
 
-        user.getBooksRead().add(book);
+            if (user.getBooksRead().contains(book)) {
+                throw new ConflictException("Book with ID: " + bookId + " is already added to user: " + username);
+            }
 
-        userRepository.save(user);
+            user.getBooksRead().add(book);
 
-        return new MessageResponse("Successfully added book to user");
+            userRepository.save(user);
+
+            return new MessageResponse("Successfully added book to user");
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Failed to add book to user");
+        }
+
     }
 
     public MessageResponse removeBookFromUser(String username, UUID bookId) {
-        User user = userRepository.findById(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            User user = userRepository.findById(username)
+                    .orElseThrow(() -> new NotFoundException("User named " + username));
 
-        boolean removed = user.getBooksRead().removeIf(book -> book.getId().equals(bookId));
+            boolean removed = user.getBooksRead().removeIf(book -> book.getId().equals(bookId));
 
-        if (!removed) {
-            throw new RuntimeException("Book not found in user's read list");
+            if (!removed) {
+                throw new NotFoundException("Book with ID: " + bookId + " not found in user's read list");
+            }
+
+            userRepository.save(user);
+
+            return new MessageResponse("Successfully removed book from user");
+        } catch (DataAccessException e) {
+            throw new InternalServerErrorException("Failed to remove book from user");
         }
 
-        userRepository.save(user);
-
-        return new MessageResponse("Successfully removed book from user");
     }
 }
